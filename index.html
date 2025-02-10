@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. AI Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #00a8e8;
+            --secondary-color: #003459;
+        }
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #001021;
+        }
+        .glassmorphism {
+            background: rgba(0, 52, 89, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .loading-circle {
+            width: 150px;
+            height: 150px;
+            border: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: rotate 2s linear infinite;
+        }
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-white">
+    <!-- Login Section -->
+    <div id="loginSection" class="fixed inset-0 z-50 flex items-center justify-center bg-black">
+        <div class="glassmorphism p-8 rounded-lg w-96">
+            <h2 class="text-2xl font-bold mb-6 text-center">J.A.R.V.I.S. Login</h2>
+            <input type="email" id="email" placeholder="Email" class="w-full mb-4 p-2 rounded bg-gray-800 border border-gray-700">
+            <input type="password" id="password" placeholder="Password" class="w-full mb-4 p-2 rounded bg-gray-800 border border-gray-700">
+            <button onclick="login()" class="w-full bg-blue-500 hover:bg-blue-600 p-2 rounded">Login</button>
+        </div>
+    </div>
+
+    <!-- Main Interface -->
+    <div id="mainInterface" class="hidden">
+        <!-- Header -->
+        <header class="glassmorphism p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div id="currentTime" class="text-xl"></div>
+                    <div id="currentDate" class="text-sm opacity-75"></div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="weather" class="text-sm"></div>
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-full hover:bg-gray-700">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-4 mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Left Column -->
+                <div class="space-y-8">
+                    <!-- AI Visualization -->
+                    <div class="glassmorphism p-8 rounded-lg flex flex-col items-center">
+                        <div class="loading-circle relative mb-4">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="pulse">
+                                    <i class="bi bi-mic-fill text-4xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="status" class="text-center text-lg">Listening...</div>
+                    </div>
+
+                    <!-- Interaction Area -->
+                    <div class="glassmorphism p-4 rounded-lg">
+                        <div id="chat-container" class="h-64 overflow-y-auto mb-4 space-y-2"></div>
+                        <div class="flex space-x-2">
+                            <input type="text" id="userInput" placeholder="Type your command..." 
+                                class="flex-1 p-2 rounded bg-gray-800 border border-gray-700">
+                            <button onclick="sendCommand()" class="bg-blue-500 hover:bg-blue-600 p-2 rounded">
+                                <i class="bi bi-send"></i>
+                            </button>
+                            <button onclick="startVoiceRecognition()" class="bg-blue-500 hover:bg-blue-600 p-2 rounded">
+                                <i class="bi bi-mic"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-8">
+                    <!-- News Feed -->
+                    <div class="glassmorphism p-4 rounded-lg">
+                        <h3 class="text-xl mb-4">Latest News</h3>
+                        <div id="news-container" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="glassmorphism p-4 rounded-lg">
+                        <h3 class="text-xl mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="quickAction('weather')" class="p-2 bg-gray-800 rounded hover:bg-gray-700">
+                                <i class="bi bi-cloud-sun"></i> Weather
+                            </button>
+                            <button onclick="quickAction('email')" class="p-2 bg-gray-800 rounded hover:bg-gray-700">
+                                <i class="bi bi-envelope"></i> Email
+                            </button>
+                            <button onclick="quickAction('search')" class="p-2 bg-gray-800 rounded hover:bg-gray-700">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                            <button onclick="quickAction('calendar')" class="p-2 bg-gray-800 rounded hover:bg-gray-700">
+                                <i class="bi bi-calendar"></i> Calendar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Simulated user authentication
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (email && password) {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('mainInterface').classList.remove('hidden');
+                updateDateTime();
+                fetchWeather();
+                fetchNews();
+            }
+        }
+
+        // Date and Time
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString();
+        }
+        setInterval(updateDateTime, 1000);
+
+        // Weather
+        function fetchWeather() {
+            // Simulated weather data
+            const weather = {
+                temp: '22°C',
+                condition: 'Sunny'
+            };
+            document.getElementById('weather').innerHTML = `
+                <i class="bi bi-sun"></i> ${weather.temp} | ${weather.condition}
+            `;
+        }
+
+        // News
+        function fetchNews() {
+            // Simulated news data
+            const news = [
+                'AI makes breakthrough in quantum computing',
+                'New clean energy initiative launched',
+                'Space exploration reaches new milestone'
+            ];
+            const newsContainer = document.getElementById('news-container');
+            newsContainer.innerHTML = news.map(item => `
+                <div class="p-2 bg-gray-800 rounded">${item}</div>
+            `).join('');
+        }
+
+        // Voice Recognition
+        function startVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onresult = function(event) {
+                    const command = event.results[0][0].transcript;
+                    document.getElementById('userInput').value = command;
+                    sendCommand();
+                };
+
+                recognition.start();
+            } else {
+                alert('Speech recognition is not supported in this browser.');
+            }
+        }
+
+        // Send Command
+        function sendCommand() {
+            const input = document.getElementById('userInput');
+            const command = input.value;
+            if (command) {
+                addToChatContainer('user', command);
+                // Simulate AI response
+                setTimeout(() => {
+                    const response = getAIResponse(command);
+                    addToChatContainer('ai', response);
+                }, 1000);
+                input.value = '';
+            }
+        }
+
+        // Add messages to chat container
+        function addToChatContainer(sender, message) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `p-2 rounded ${sender === 'user' ? 'bg-blue-500 ml-auto' : 'bg-gray-700'} max-w-[80%]`;
+            messageDiv.textContent = message;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Simulated AI responses
+        function getAIResponse(command) {
+            const responses = {
+                'weather': 'The current weather is sunny with a temperature of 22°C.',
+                'time': 'The current time is ' + new Date().toLocaleTimeString(),
+                'hello': 'Hello! How can I assist you today?'
+            };
+            return responses[command.toLowerCase()] || "I'm sorry, I don't understand that command.";
+        }
+
+        // Quick Actions
+        function quickAction(action) {
+            const actions = {
+                'weather': 'Checking weather...',
+                'email': 'Opening email client...',
+                'search': 'Opening search...',
+                'calendar': 'Opening calendar...'
+            };
+            addToChatContainer('user', `Request: ${action}`);
+            addToChatContainer('ai', actions[action]);
+        }
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('bg-white');
+            document.body.classList.toggle('text-black');
+        }
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
